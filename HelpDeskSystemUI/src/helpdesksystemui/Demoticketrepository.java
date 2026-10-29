@@ -324,7 +324,11 @@ public class Demoticketrepository implements Ticketrepository {
     @Override
     public synchronized List<Ticket> findRecent(int limit) {
         int count = Math.min(Math.max(0, limit), tickets.size());
-        return new ArrayList<>(tickets.subList(0, count));
+        int start = tickets.size() - count;
+
+        return new ArrayList<>(
+            tickets.subList(start, tickets.size())
+        );
     }
 
     @Override
@@ -413,7 +417,7 @@ public class Demoticketrepository implements Ticketrepository {
             activity
         );
 
-        tickets.add(0, ticket);
+        tickets.add(ticket);
 
         if (!writeTicketsToCsv()) {
             tickets.remove(ticket);
@@ -446,7 +450,7 @@ public class Demoticketrepository implements Ticketrepository {
         if (existingIndex >= 0) {
             previous = tickets.set(existingIndex, ticket);
         } else {
-            tickets.add(0, ticket);
+            tickets.add(ticket);
         }
 
         if (!writeTicketsToCsv()) {
