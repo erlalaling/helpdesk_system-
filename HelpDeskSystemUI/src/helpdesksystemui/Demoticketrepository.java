@@ -384,7 +384,9 @@ public class Demoticketrepository implements Ticketrepository {
             String category,
             Ticketpriority priority,
             String requester,
-            String attachmentPath) {
+            String attachmentPath,
+            int totalTime
+        ) {
 
         String newId = String.format("HD-%05d", nextSequenceNumber);
 

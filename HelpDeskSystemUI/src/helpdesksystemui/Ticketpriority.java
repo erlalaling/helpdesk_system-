@@ -1,6 +1,7 @@
 package helpdesksystemui;
 
 public enum Ticketpriority {
+    DEFAULT("Default"),
     LOW("Low"),
     MEDIUM("Medium"),
     HIGH("High"),

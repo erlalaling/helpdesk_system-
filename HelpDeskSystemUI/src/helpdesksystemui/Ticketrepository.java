@@ -22,7 +22,9 @@ public interface Ticketrepository {
             String category,
             Ticketpriority priority,
             String requester,
-            String attachmentPath);
+            String attachmentPath,
+            int totalTime
+        );
 
     boolean save(Ticket ticket);
 
