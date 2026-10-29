@@ -370,6 +370,7 @@ public class Submitticketpanel extends JPanel {
     }
 
 
+    @Deprecated 
     public int computeMinute(){
         int totalMinutes = 0;
         try {
