@@ -1,19 +1,24 @@
+
 package helpdesksystemui;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PushbackReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * In-memory demonstration repository for the HelpDeskSystem project.
- * Note: Because this repository uses in-memory collections for classroom
- * demonstration, newly created or modified tickets persist across all screens
- * during the active session and reset when the application closes.
- */
 public class Demoticketrepository implements Ticketrepository {
 
     public static final String DEMO_CURRENT_REQUESTER = "Sean Gerolaga";
@@ -23,243 +28,293 @@ public class Demoticketrepository implements Ticketrepository {
     };
 
     public static final String[] TECHNICIANS = {
-        "Unassigned", "IT Support", "Mark Villanueva", "Jessa Mae Cruz", "Ryan Dela Cruz"
+        "Unassigned", "IT Support", "Mark Villanueva",
+        "Jessa Mae Cruz", "Ryan Dela Cruz"
     };
 
+    private static final String[] CSV_HEADER = {
+        "id", "title", "description", "category", "priority",
+        "status", "requester", "technician", "attachmentPath",
+        "createdDate", "activityLog"
+    };
+
+    // Reads/writes tickets.csv in the application's working directory.
+    private final Path csvFile = Paths.get("tickets.csv").toAbsolutePath();
+
     private final List<Ticket> tickets = new ArrayList<>();
-    private int nextSequenceNumber = 25;
+    private int nextSequenceNumber = 1;
 
     public Demoticketrepository() {
-        seedDemoTickets();
+        loadTickets();
     }
 
-    private void seedDemoTickets() {
-        // Featured top 5 tickets matching the PPTX slides (HD-00024 to HD-00020)
-        tickets.add(new Ticket(
-                "HD-00024",
-                "Computer not turning on",
-                "Computer does not power on. Power cable checked and wall outlet verified.",
-                "Hardware",
-                Ticketpriority.HIGH,
-                Ticketstatus.OPEN,
-                DEMO_CURRENT_REQUESTER,
-                "Unassigned",
-                "power_supply_diagnostic.log",
-                LocalDate.of(2026, 10, 24),
-                Arrays.asList(
-                        "10:45 AM — Ticket submitted",
-                        "11:10 AM — Assigned to IT Support queue"
-                )
-        ));
+    // -------------------- CSV READING --------------------
 
-        tickets.add(new Ticket(
-                "HD-00023",
-                "Internet connection issue",
-                "Intermittent Wi-Fi disconnection in Computer Lab 2 during lab exercises.",
-                "Network",
-                Ticketpriority.MEDIUM,
-                Ticketstatus.RESOLVED,
-                "Maria Santos",
-                "IT Support",
-                "",
-                LocalDate.of(2026, 10, 23),
-                Arrays.asList(
-                        "09:15 AM — Ticket submitted",
-                        "09:40 AM — Assigned to IT Support",
-                        "11:05 AM — Access point channel reconfigured and marked Resolved"
-                )
-        ));
+    private void loadTickets() {
+        try {
+            if (!Files.exists(csvFile)) {
+                createEmptyCsv();
+                return;
+            }
 
-        tickets.add(new Ticket(
-                "HD-00022",
-                "Reset password request",
-                "Unable to log in to the student portal after multi-factor reset.",
-                "Account",
-                Ticketpriority.LOW,
-                Ticketstatus.IN_PROGRESS,
-                "Carlos Reyes",
-                "Jessa Mae Cruz",
-                "",
-                LocalDate.of(2026, 10, 22),
-                Arrays.asList(
-                        "01:20 PM — Ticket submitted",
-                        "01:45 PM — Assigned to Jessa Mae Cruz",
-                        "02:00 PM — Identity verification in progress"
-                )
-        ));
+            List<List<String>> records = readCsvRecords();
 
-        tickets.add(new Ticket(
-                "HD-00021",
-                "Software installation error",
-                "Apache NetBeans JDK path configuration error on workstation PC-14.",
-                "Software",
-                Ticketpriority.MEDIUM,
-                Ticketstatus.OPEN,
-                "Ana Lopez",
-                "Unassigned",
-                "netbeans_error_screenshot.png",
-                LocalDate.of(2026, 10, 21),
-                Collections.singletonList("08:30 AM — Ticket submitted")
-        ));
+            if (records.isEmpty()) {
+                createEmptyCsv();
+                return;
+            }
 
-        tickets.add(new Ticket(
-                "HD-00020",
-                "Monitor not displaying",
-                "External monitor shows 'No HDMI Signal' despite reseating display cable.",
-                "Hardware",
-                Ticketpriority.HIGH,
-                Ticketstatus.RESOLVED,
-                "Pedro Santos",
-                "Mark Villanueva",
-                "",
-                LocalDate.of(2026, 10, 20),
-                Arrays.asList(
-                        "02:10 PM — Ticket submitted",
-                        "02:30 PM — Assigned to Mark Villanueva",
-                        "03:15 PM — Replaced faulty HDMI cable; display restored"
-                )
-        ));
+            // The first record contains the column headers.
+            int maxId = 0;
 
-        // Additional tickets for DEMO_CURRENT_REQUESTER ("Sean Gerolaga") matching My Tickets slide
-        tickets.add(new Ticket(
-                "HD-00019",
-                "Internet connection issue",
-                "Ethernet port at Lab Row 3 Seat 4 shows unplugged status.",
-                "Network",
-                Ticketpriority.MEDIUM,
-                Ticketstatus.RESOLVED,
-                DEMO_CURRENT_REQUESTER,
-                "IT Support",
-                "",
-                LocalDate.of(2026, 10, 19),
-                Arrays.asList(
-                        "10:00 AM — Ticket submitted",
-                        "11:30 AM — Patch cord replaced and marked Resolved"
-                )
-        ));
+            for (int i = 1; i < records.size(); i++) {
+                List<String> row = records.get(i);
 
-        tickets.add(new Ticket(
-                "HD-00018",
-                "Reset password request",
-                "Requesting LMS account password reset for 1st Semester course access.",
-                "Account",
-                Ticketpriority.LOW,
-                Ticketstatus.IN_PROGRESS,
-                DEMO_CURRENT_REQUESTER,
-                "Jessa Mae Cruz",
-                "",
-                LocalDate.of(2026, 10, 18),
-                Arrays.asList(
-                        "09:05 AM — Ticket submitted",
-                        "09:30 AM — Assigned to Jessa Mae Cruz"
-                )
-        ));
+                if (row.size() == 1 && row.get(0).trim().isEmpty()) {
+                    continue;
+                }
 
-        tickets.add(new Ticket(
-                "HD-00017",
-                "Software installation error",
-                "Missing JavaFX SDK library on Lab PC-08.",
-                "Software",
-                Ticketpriority.MEDIUM,
-                Ticketstatus.OPEN,
-                DEMO_CURRENT_REQUESTER,
-                "Unassigned",
-                "",
-                LocalDate.of(2026, 10, 17),
-                Collections.singletonList("03:40 PM — Ticket submitted")
-        ));
+                if (row.size() != CSV_HEADER.length) {
+                    throw new IOException(
+                        "Invalid CSV row " + (i + 1)
+                        + ": expected " + CSV_HEADER.length
+                        + " columns but found " + row.size()
+                    );
+                }
 
-        tickets.add(new Ticket(
-                "HD-00016",
-                "Monitor not displaying",
-                "Flickering LCD panel in Room 302.",
-                "Hardware",
-                Ticketpriority.HIGH,
-                Ticketstatus.RESOLVED,
-                DEMO_CURRENT_REQUESTER,
-                "Mark Villanueva",
-                "",
-                LocalDate.of(2026, 10, 16),
-                Arrays.asList(
-                        "01:00 PM — Ticket submitted",
-                        "02:45 PM — Display unit swapped and Resolved"
-                )
-        ));
+                Ticket ticket = rowToTicket(row);
+                tickets.add(ticket);
 
-        // Additional tickets to match the exact Dashboard totals from Slide 1:
-        // Total = 46 (12 Open, 9 In Progress, 19 Resolved, 6 Closed)
-        // Currently seeded above: 3 Open, 2 In Progress, 4 Resolved, 0 Closed (Total = 9)
-        // Need: 9 more Open, 7 more In Progress, 15 more Resolved, 6 Closed (37 more = 46 total)
-        String[] requesters = {"Maria Santos", "Carlos Reyes", "Ana Lopez", "Pedro Santos", DEMO_CURRENT_REQUESTER};
-        int idCounter = 15;
+                String id = ticket.getId();
+                if (id.matches("HD-\\d+")) {
+                    int number = Integer.parseInt(id.substring(3));
+                    maxId = Math.max(maxId, number);
+                }
+            }
 
-        // 9 more OPEN tickets
-        for (int i = 0; i < 9; i++) {
-            Ticketpriority p = (i % 3 == 0) ? Ticketpriority.URGENT : (i % 2 == 0 ? Ticketpriority.HIGH : Ticketpriority.MEDIUM);
-            tickets.add(createSeededTicket(idCounter--, "Workstation peripheral issue #" + (i + 1),
-                    CATEGORIES[i % CATEGORIES.length], p, Ticketstatus.OPEN,
-                    requesters[i % requesters.length], "Unassigned", LocalDate.of(2026, 10, Math.max(1, 15 - i))));
-        }
+            nextSequenceNumber = maxId + 1;
 
-        // 7 more IN_PROGRESS tickets
-        for (int i = 0; i < 7; i++) {
-            Ticketpriority p = (i == 0) ? Ticketpriority.URGENT : Ticketpriority.MEDIUM;
-            tickets.add(createSeededTicket(idCounter--, "Network switch configuration #" + (i + 1),
-                    CATEGORIES[(i + 1) % CATEGORIES.length], p, Ticketstatus.IN_PROGRESS,
-                    requesters[i % requesters.length], TECHNICIANS[1 + (i % (TECHNICIANS.length - 1))],
-                    LocalDate.of(2026, 10, Math.max(1, 14 - i))));
-        }
+            System.out.println("Tickets loaded: " + tickets.size());
+            System.out.println("CSV file: " + csvFile);
 
-        // 15 more RESOLVED tickets
-        for (int i = 0; i < 15; i++) {
-            Ticketpriority p = (i % 4 == 0) ? Ticketpriority.HIGH : Ticketpriority.LOW;
-            tickets.add(createSeededTicket(idCounter--, "Completed lab maintenance request #" + (i + 1),
-                    CATEGORIES[(i + 2) % CATEGORIES.length], p, Ticketstatus.RESOLVED,
-                    requesters[i % requesters.length], TECHNICIANS[1 + (i % (TECHNICIANS.length - 1))],
-                    LocalDate.of(2026, 10, Math.max(1, 15 - (i % 14)))));
-        }
-
-        // 6 CLOSED tickets
-        for (int i = 0; i < 6; i++) {
-            tickets.add(createSeededTicket(idCounter--, "Archived support ticket #" + (i + 1),
-                    CATEGORIES[(i + 3) % CATEGORIES.length], Ticketpriority.LOW, Ticketstatus.CLOSED,
-                    requesters[i % requesters.length], "IT Support",
-                    LocalDate.of(2026, 10, Math.max(1, 6 - i))));
+        } catch (IOException | IllegalArgumentException e) {
+            throw new IllegalStateException(
+                "Could not load tickets from " + csvFile
+                + ". Check the CSV file and its contents.", e
+            );
         }
     }
 
-    private Ticket createSeededTicket(
-            int num,
-            String title,
-            String category,
-            Ticketpriority priority,
-            Ticketstatus status,
-            String requester,
-            String technician,
-            LocalDate date) {
-        String id = String.format("HD-%05d", Math.max(1, num));
-        List<String> log = new ArrayList<>();
-        log.add("09:00 AM — Ticket submitted");
-        if (!"Unassigned".equalsIgnoreCase(technician)) {
-            log.add("09:30 AM — Assigned to " + technician);
+    private Ticket rowToTicket(List<String> row) {
+        String activityField = row.get(10);
+
+        List<String> activity = new ArrayList<>();
+
+        if (!activityField.isEmpty()) {
+            Collections.addAll(activity, activityField.split(" \\|\\| ", -1));
         }
-        if (status == Ticketstatus.RESOLVED || status == Ticketstatus.CLOSED) {
-            log.add("04:15 PM — Status updated to " + status.getDisplayName());
-        }
+
         return new Ticket(
-                id,
-                title,
-                "Support request logged under " + category + " category for " + title + ".",
-                category,
-                priority,
-                status,
-                requester,
-                technician,
-                "",
-                date,
-                log
+            row.get(0),
+            row.get(1),
+            row.get(2),
+            row.get(3),
+            Ticketpriority.valueOf(row.get(4).trim().toUpperCase(Locale.ROOT)),
+            Ticketstatus.valueOf(row.get(5).trim().toUpperCase(Locale.ROOT)),
+            row.get(6),
+            row.get(7),
+            row.get(8),
+            LocalDate.parse(row.get(9)),
+            activity
         );
     }
+
+    /*
+     * Reads complete CSV records, including fields containing commas,
+     * escaped quotes, or line breaks.
+     */
+    private List<List<String>> readCsvRecords() throws IOException {
+        List<List<String>> records = new ArrayList<>();
+
+        try (PushbackReader reader = new PushbackReader(
+                Files.newBufferedReader(csvFile, StandardCharsets.UTF_8), 1)) {
+
+            List<String> row = new ArrayList<>();
+            StringBuilder field = new StringBuilder();
+            boolean inQuotes = false;
+            boolean recordStarted = false;
+            int value;
+
+            while ((value = reader.read()) != -1) {
+                char c = (char) value;
+
+                if (inQuotes) {
+                    if (c == '"') {
+                        int next = reader.read();
+
+                        if (next == '"') {
+                            field.append('"');
+                        } else {
+                            inQuotes = false;
+                            if (next != -1) {
+                                reader.unread(next);
+                            }
+                        }
+                    } else {
+                        field.append(c);
+                    }
+
+                    continue;
+                }
+
+                if (c == '"' && field.length() == 0) {
+                    inQuotes = true;
+                    recordStarted = true;
+                } else if (c == ',') {
+                    row.add(field.toString());
+                    field.setLength(0);
+                    recordStarted = true;
+                } else if (c == '\n' || c == '\r') {
+                    if (c == '\r') {
+                        int next = reader.read();
+                        if (next != '\n' && next != -1) {
+                            reader.unread(next);
+                        }
+                    }
+
+                    row.add(field.toString());
+                    records.add(row);
+
+                    row = new ArrayList<>();
+                    field.setLength(0);
+                    recordStarted = false;
+                } else {
+                    field.append(c);
+                    recordStarted = true;
+                }
+            }
+
+            if (inQuotes) {
+                throw new IOException("Unclosed quotation mark in CSV.");
+            }
+
+            if (recordStarted || !row.isEmpty() || field.length() > 0) {
+                row.add(field.toString());
+                records.add(row);
+            }
+        }
+
+        return records;
+    }
+
+    // -------------------- CSV WRITING --------------------
+
+    private void createEmptyCsv() throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                csvFile, StandardCharsets.UTF_8)) {
+            writeCsvRecord(writer, java.util.Arrays.asList(CSV_HEADER));
+        }
+    }
+
+    private boolean writeTicketsToCsv() {
+        Path tempFile = null;
+
+        try {
+            Path parent = csvFile.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            tempFile = Files.createTempFile(
+                parent, "tickets-", ".tmp"
+            );
+
+            try (BufferedWriter writer = Files.newBufferedWriter(
+                    tempFile, StandardCharsets.UTF_8)) {
+
+                writeCsvRecord(writer, java.util.Arrays.asList(CSV_HEADER));
+
+                for (Ticket ticket : tickets) {
+                    writeCsvRecord(writer, ticketToRow(ticket));
+                }
+            }
+
+            try {
+                Files.move(
+                    tempFile,
+                    csvFile,
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                );
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(
+                    tempFile,
+                    csvFile,
+                    StandardCopyOption.REPLACE_EXISTING
+                );
+            }
+
+            return true;
+
+        } catch (IOException e) {
+            System.err.println("Failed to save tickets to " + csvFile);
+            e.printStackTrace();
+            return false;
+
+        } finally {
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    System.err.println("Could not delete temporary CSV file.");
+                }
+            }
+        }
+    }
+
+    private List<String> ticketToRow(Ticket ticket) {
+        return java.util.Arrays.asList(
+            ticket.getId(),
+            ticket.getTitle(),
+            ticket.getDescription(),
+            ticket.getCategory(),
+            ticket.getPriority().name(),
+            ticket.getStatus().name(),
+            ticket.getRequester(),
+            ticket.getAssignedTechnician(),
+            ticket.getAttachmentPath(),
+            ticket.getCreatedDate().toString(),
+            String.join(" || ", ticket.getActivityLog())
+        );
+    }
+
+    private void writeCsvRecord(
+            BufferedWriter writer, List<String> fields) throws IOException {
+
+        for (int i = 0; i < fields.size(); i++) {
+            if (i > 0) {
+                writer.write(',');
+            }
+
+            String value = fields.get(i) == null ? "" : fields.get(i);
+
+            // Quote fields that contain CSV-special characters.
+            if (value.contains(",") || value.contains("\"")
+                    || value.contains("\n") || value.contains("\r")) {
+
+                writer.write('"');
+                writer.write(value.replace("\"", "\"\""));
+                writer.write('"');
+
+            } else {
+                writer.write(value);
+            }
+        }
+
+        writer.newLine();
+    }
+
+    // -------------------- SEARCH METHODS --------------------
 
     @Override
     public synchronized List<Ticket> findAll() {
@@ -277,25 +332,30 @@ public class Demoticketrepository implements Ticketrepository {
         if (requester == null || requester.trim().isEmpty()) {
             return Collections.emptyList();
         }
+
         String target = requester.trim();
+
         return tickets.stream()
-                .filter(t -> target.equalsIgnoreCase(t.getRequester()))
-                .collect(Collectors.toList());
+            .filter(t -> target.equalsIgnoreCase(t.getRequester()))
+            .collect(Collectors.toList());
     }
 
     @Override
-    public synchronized List<Ticket> findByDateRange(LocalDate fromDate, LocalDate toDate) {
+    public synchronized List<Ticket> findByDateRange(
+            LocalDate fromDate, LocalDate toDate) {
+
         return tickets.stream()
-                .filter(t -> {
-                    LocalDate d = t.getCreatedDate();
-                    if (d == null) {
-                        return true;
-                    }
-                    boolean afterFrom = (fromDate == null) || !d.isBefore(fromDate);
-                    boolean beforeTo = (toDate == null) || !d.isAfter(toDate);
-                    return afterFrom && beforeTo;
-                })
-                .collect(Collectors.toList());
+            .filter(t -> {
+                LocalDate date = t.getCreatedDate();
+
+                boolean afterFrom =
+                    fromDate == null || !date.isBefore(fromDate);
+                boolean beforeTo =
+                    toDate == null || !date.isAfter(toDate);
+
+                return afterFrom && beforeTo;
+            })
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -303,11 +363,15 @@ public class Demoticketrepository implements Ticketrepository {
         if (id == null || id.trim().isEmpty()) {
             return Optional.empty();
         }
+
         String target = id.trim();
+
         return tickets.stream()
-                .filter(t -> target.equalsIgnoreCase(t.getId()))
-                .findFirst();
+            .filter(t -> target.equalsIgnoreCase(t.getId()))
+            .findFirst();
     }
+
+    // -------------------- CREATE AND UPDATE --------------------
 
     @Override
     public synchronized Ticket createTicket(
@@ -317,27 +381,48 @@ public class Demoticketrepository implements Ticketrepository {
             Ticketpriority priority,
             String requester,
             String attachmentPath) {
-        String newId = String.format("HD-%05d", nextSequenceNumber++);
-        List<String> initialActivity = new ArrayList<>();
-        initialActivity.add(Ticket.formatNow() + " — Ticket submitted by "
-                + (requester == null || requester.trim().isEmpty() ? DEMO_CURRENT_REQUESTER : requester.trim()));
-        if (attachmentPath != null && !attachmentPath.trim().isEmpty()) {
-            initialActivity.add(Ticket.formatNow() + " — Attachment added: " + attachmentPath.trim());
-        }
-        Ticket ticket = new Ticket(
-                newId,
-                title,
-                description,
-                category,
-                priority,
-                Ticketstatus.OPEN,
-                requester,
-                "Unassigned",
-                attachmentPath,
-                LocalDate.now(),
-                initialActivity
+
+        String newId = String.format("HD-%05d", nextSequenceNumber);
+
+        List<String> activity = new ArrayList<>();
+
+        activity.add(
+            Ticket.formatNow() + " — Ticket submitted by "
+            + (requester == null || requester.trim().isEmpty()
+                ? DEMO_CURRENT_REQUESTER : requester.trim())
         );
+
+        if (attachmentPath != null && !attachmentPath.trim().isEmpty()) {
+            activity.add(
+                Ticket.formatNow() + " — Attachment added: "
+                + attachmentPath.trim()
+            );
+        }
+
+        Ticket ticket = new Ticket(
+            newId,
+            title,
+            description,
+            category,
+            priority,
+            Ticketstatus.OPEN,
+            requester,
+            "Unassigned",
+            attachmentPath,
+            LocalDate.now(),
+            activity
+        );
+
         tickets.add(0, ticket);
+
+        if (!writeTicketsToCsv()) {
+            tickets.remove(ticket);
+            throw new IllegalStateException(
+                "Ticket was not saved to the CSV file: " + csvFile
+            );
+        }
+
+        nextSequenceNumber++;
         return ticket;
     }
 
@@ -346,13 +431,34 @@ public class Demoticketrepository implements Ticketrepository {
         if (ticket == null || ticket.getId() == null) {
             return false;
         }
+
+        int existingIndex = -1;
+
         for (int i = 0; i < tickets.size(); i++) {
             if (tickets.get(i).getId().equalsIgnoreCase(ticket.getId())) {
-                tickets.set(i, ticket);
-                return true;
+                existingIndex = i;
+                break;
             }
         }
-        tickets.add(0, ticket);
+
+        Ticket previous = null;
+
+        if (existingIndex >= 0) {
+            previous = tickets.set(existingIndex, ticket);
+        } else {
+            tickets.add(0, ticket);
+        }
+
+        if (!writeTicketsToCsv()) {
+            if (existingIndex >= 0) {
+                tickets.set(existingIndex, previous);
+            } else {
+                tickets.remove(ticket);
+            }
+
+            return false;
+        }
+
         return true;
     }
 
@@ -360,6 +466,8 @@ public class Demoticketrepository implements Ticketrepository {
     public synchronized boolean updateTicket(Ticket ticket) {
         return save(ticket);
     }
+
+    // -------------------- COUNTS --------------------
 
     @Override
     public synchronized int countAll() {
@@ -371,8 +479,9 @@ public class Demoticketrepository implements Ticketrepository {
         if (status == null) {
             return 0;
         }
+
         return (int) tickets.stream()
-                .filter(t -> t.getStatus() == status)
-                .count();
+            .filter(t -> t.getStatus() == status)
+            .count();
     }
 }
