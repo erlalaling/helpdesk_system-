@@ -9,6 +9,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
 import java.util.function.Consumer;
+import java.util.Date;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -109,11 +110,11 @@ public class Submitticketpanel extends JPanel {
         categoryOptions[0] = "-- Select Category --";
         System.arraycopy(Demoticketrepository.CATEGORIES, 0, categoryOptions, 1, Demoticketrepository.CATEGORIES.length);
         categoryCombo = new JComboBox<>(categoryOptions);
-        categoryCombo.setSelectedIndex(1); // Default to "Hardware" matching Slide 2
+        categoryCombo.setSelectedIndex(0); // Default to "Hardware" matching Slide 2
         categoryCombo.setFont(Uitheme.FONT_BODY);
 
         priorityCombo = new JComboBox<>(Ticketpriority.values());
-        priorityCombo.setSelectedItem(Ticketpriority.HIGH); // Default matching Slide 2
+        priorityCombo.setSelectedItem(Ticketpriority.DEFAULT); // Default matching Slide 2
         priorityCombo.setFont(Uitheme.FONT_BODY);
 
         gbc.gridx = 0;
@@ -293,7 +294,7 @@ public class Submitticketpanel extends JPanel {
                 category,
                 priority == null ? Ticketpriority.MEDIUM : priority,
                 Demoticketrepository.DEMO_CURRENT_REQUESTER,
-                selectedAttachmentPath
+                selectedAttachmentPath, computeMinute()
         );
 
         if (created == null || !repository.findById(created.getId()).isPresent()) {
@@ -360,11 +361,26 @@ public class Submitticketpanel extends JPanel {
     public void clearFormSilently() {
         resetValidationBorders();
         titleField.setText("");
-        categoryCombo.setSelectedIndex(1);
+        categoryCombo.setSelectedIndex(0);
         priorityCombo.setSelectedItem(Ticketpriority.HIGH);
         descriptionArea.setText("");
         selectedAttachmentPath = "";
         attachmentLabel.setText("No file selected");
         attachmentLabel.setForeground(Uitheme.TEXT_SECONDARY);
+    }
+
+
+    public int computeMinute(){
+        int totalMinutes = 0;
+        try {
+            Date now = new Date();
+            int hours = now.getHours();
+            int minutes = now.getMinutes();
+            totalMinutes = hours * 60 + minutes;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return totalMinutes;
     }
 }
