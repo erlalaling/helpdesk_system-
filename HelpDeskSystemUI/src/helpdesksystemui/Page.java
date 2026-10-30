@@ -3,9 +3,7 @@ package helpdesksystemui;
 public enum Page {
     DASHBOARD("Dashboard", true),
     SUBMIT_TICKET("Submit Ticket", true),
-    MY_TICKETS("My Tickets", true),
     ALL_TICKETS("All Tickets", true),
-    REPORTS("Reports", true),
     TICKET_DETAILS("Ticket Details", false);
 
     private final String label;

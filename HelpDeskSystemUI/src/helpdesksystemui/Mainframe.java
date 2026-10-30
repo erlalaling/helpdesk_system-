@@ -61,7 +61,7 @@ public class Mainframe extends JFrame {
                 this.repository,
                 createdTicket -> {
                     refreshAllViews();
-                    openTicketDetails(createdTicket, Page.MY_TICKETS);
+                    openTicketDetails(createdTicket, Page.ALL_TICKETS);
                 },
                 this::refreshAllViews
         );
