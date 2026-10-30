@@ -18,10 +18,9 @@ public class Mainframe extends JFrame {
 
     private final Dashboardpanel dashboardPanel;
     private final Submitticketpanel submitTicketPanel;
-    private final Myticketspanel myTicketsPanel;
     private final Allticketspanel allTicketsPanel;
     private final Ticketdetailpanel ticketDetailsPanel;
-    private final Reportspanel reportsPanel;
+
 
     private Page currentPage = Page.DASHBOARD;
     private Page previousListPage = Page.DASHBOARD;
@@ -67,11 +66,6 @@ public class Mainframe extends JFrame {
                 this::refreshAllViews
         );
 
-        myTicketsPanel = new Myticketspanel(
-                this.repository,
-                ticket -> openTicketDetails(ticket, Page.MY_TICKETS)
-        );
-
         allTicketsPanel = new Allticketspanel(
                 this.repository,
                 ticket -> openTicketDetails(ticket, Page.ALL_TICKETS)
@@ -83,15 +77,11 @@ public class Mainframe extends JFrame {
                 () -> navigateToPage(previousListPage)
         );
 
-        reportsPanel = new Reportspanel(this.repository);
-
         // Register all cards in CardLayout
         contentCardsPanel.add(dashboardPanel, Page.DASHBOARD.name());
         contentCardsPanel.add(submitTicketPanel, Page.SUBMIT_TICKET.name());
-        contentCardsPanel.add(myTicketsPanel, Page.MY_TICKETS.name());
         contentCardsPanel.add(allTicketsPanel, Page.ALL_TICKETS.name());
         contentCardsPanel.add(ticketDetailsPanel, Page.TICKET_DETAILS.name());
-        contentCardsPanel.add(reportsPanel, Page.REPORTS.name());
 
         mainRightPanel.add(headerPanel, BorderLayout.NORTH);
         mainRightPanel.add(contentCardsPanel, BorderLayout.CENTER);
@@ -187,8 +177,6 @@ public class Mainframe extends JFrame {
 
     public void refreshAllViews() {
         dashboardPanel.refreshData();
-        myTicketsPanel.refreshData();
         allTicketsPanel.refreshData();
-        reportsPanel.refreshData();
     }
 }
