@@ -1,10 +1,10 @@
 package helpdesksystemui;
 
 public enum Ticketpriority {
-    LOW("Low"),
-    MEDIUM("Medium"),
+    URGENT("Urgent"),
     HIGH("High"),
-    URGENT("Urgent");
+    MEDIUM("Medium"),
+    LOW("Low");
 
     private final String displayName;
 

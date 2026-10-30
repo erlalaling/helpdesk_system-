@@ -110,11 +110,11 @@ public class Submitticketpanel extends JPanel {
         categoryOptions[0] = "-- Select Category --";
         System.arraycopy(Demoticketrepository.CATEGORIES, 0, categoryOptions, 1, Demoticketrepository.CATEGORIES.length);
         categoryCombo = new JComboBox<>(categoryOptions);
-        categoryCombo.setSelectedIndex(0); // Default to "Hardware" matching Slide 2
+        categoryCombo.setSelectedIndex(0);
         categoryCombo.setFont(Uitheme.FONT_BODY);
 
         priorityCombo = new JComboBox<>(Ticketpriority.values());
-        priorityCombo.setSelectedItem(Ticketpriority.DEFAULT); // Default matching Slide 2
+        priorityCombo.setSelectedItem(Ticketpriority.MEDIUM);
         priorityCombo.setFont(Uitheme.FONT_BODY);
 
         gbc.gridx = 0;
@@ -369,7 +369,7 @@ public class Submitticketpanel extends JPanel {
         attachmentLabel.setForeground(Uitheme.TEXT_SECONDARY);
     }
 
-
+    @Deprecated 
     public int computeMinute(){
         int totalMinutes = 0;
         try {

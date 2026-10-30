@@ -42,11 +42,11 @@ public class Recentticketpanel extends JPanel {
         JPanel headerPanel = new JPanel(new BorderLayout(0, 4));
         headerPanel.setOpaque(false);
 
-        JLabel titleLabel = new JLabel("RECENT TICKETS");
+        JLabel titleLabel = new JLabel("TICKET QUEUE");
         titleLabel.setFont(Uitheme.FONT_SECTION);
         titleLabel.setForeground(Uitheme.TEXT_PRIMARY);
 
-        JLabel subtitleLabel = new JLabel("Latest requests submitted to the Help Desk");
+        JLabel subtitleLabel = new JLabel("Unfinished tickets in processing order: oldest hour first, then most urgent");
         subtitleLabel.setFont(Uitheme.FONT_SMALL);
         subtitleLabel.setForeground(Uitheme.TEXT_SECONDARY);
 
@@ -254,4 +254,4 @@ public class Recentticketpanel extends JPanel {
             return panel;
         }
     }
-}
+}

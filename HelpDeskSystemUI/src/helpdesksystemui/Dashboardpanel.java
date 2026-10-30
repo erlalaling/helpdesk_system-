@@ -65,6 +65,6 @@ public class Dashboardpanel extends JPanel {
         inProgressCard.setValue(repository.countByStatus(Ticketstatus.IN_PROGRESS));
         resolvedCard.setValue(repository.countByStatus(Ticketstatus.RESOLVED));
         closedCard.setValue(repository.countByStatus(Ticketstatus.CLOSED));
-        recentTicketPanel.setTickets(repository.findRecent(10));
+        recentTicketPanel.setTickets(repository.findPrioritized(10));
     }
-}
+}

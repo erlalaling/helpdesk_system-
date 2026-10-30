@@ -10,6 +10,13 @@ public interface Ticketrepository {
 
     List<Ticket> findRecent(int limit);
 
+    // Unfinished (OPEN / IN_PROGRESS) tickets in processing order:
+    // oldest date, then earliest hour, then most urgent priority.
+    List<Ticket> findPrioritized(int limit);
+
+    // RESOLVED and CLOSED tickets.
+    List<Ticket> findCompleted();
+
     List<Ticket> findByRequester(String requester);
 
     List<Ticket> findByDateRange(LocalDate fromDate, LocalDate toDate);
@@ -22,7 +29,7 @@ public interface Ticketrepository {
             String category,
             Ticketpriority priority,
             String requester,
-            String attachmentPath);
+            String attachmentPath, int totalTime);
 
     boolean save(Ticket ticket);
 
@@ -31,4 +38,4 @@ public interface Ticketrepository {
     int countAll();
 
     int countByStatus(Ticketstatus status);
-}
+}
