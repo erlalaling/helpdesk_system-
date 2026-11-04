@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class Demoticketrepository implements Ticketrepository {
 
     public static final String DEMO_CURRENT_REQUESTER = "Sean Gerolaga";
+    private static final String ACTIVITY_LOG_DELIMITER = " || ";
 
     public static final String[] CATEGORIES = {
         "Hardware", "Network", "Account", "Software", "Facilities"
@@ -263,7 +264,11 @@ public class Demoticketrepository implements Ticketrepository {
         List<String> activity = new ArrayList<>();
 
         if (!activityField.isEmpty()) {
-            Collections.addAll(activity, activityField.split(" \\|\\| ", -1));
+            for (String entry : activityField.split("\\R|\\s*\\|\\|\\s*")) {
+                if (!entry.trim().isEmpty()) {
+                    activity.add(entry.trim());
+                }
+            }
         }
 
         return new Ticket(
@@ -441,7 +446,7 @@ public class Demoticketrepository implements Ticketrepository {
             ticket.getAssignedTechnician(),
             ticket.getAttachmentPath(),
             ticket.getCreatedDate().toString(),
-            String.join(" || ", ticket.getActivityLog()),
+            String.join(ACTIVITY_LOG_DELIMITER, ticket.getActivityLog()),
             String.valueOf(ticket.getTime())
         );
     }
